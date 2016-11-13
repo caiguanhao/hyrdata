@@ -220,7 +220,7 @@ class Fetch
     end
 
     def fix_pdf_url(str)
-      str.strip.gsub(/(?:[^:]|\A)\/{2,}/, '/').gsub('/displaypdf/index?pdfurl=', '')
+      str.strip.gsub(/(\A|[^:])\/{2,}/, '\1/').gsub('/displaypdf/index?pdfurl=', '')
     end
 
     def vertical_table(cells)
