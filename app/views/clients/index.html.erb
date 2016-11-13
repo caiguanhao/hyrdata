@@ -1,10 +1,12 @@
 <div id="hyrdata">
   <div class="row">
     <div class="col-sm-2">
-      <div class="list-group" v-for="(clients, broker) in groupedClients">
+      <div v-for="(clients, broker) in groupedClients">
         <span v-text="broker"></span>
-        <a href class="list-group-item" v-for="client in clients" v-text="client.cellphone"
-          v-bind:class="{active: client.active}" v-on:click.prevent="selectClient(client.id)"></a>
+        <div class="list-group">
+          <a href class="list-group-item" v-for="client in clients" v-text="client.cellphone"
+            v-bind:class="{active: client.active}" v-on:click.prevent="selectClient(client.id)"></a>
+        </div>
       </div>
       <button class="btn btn-default btn-sm" v-on:click="callLogin(true)">登录</button>
     </div>
@@ -345,7 +347,9 @@
     },
     created: function () {
       this.getClients().then(function () {
-        this.selectClient(this.clients[0].id);
+        if (this.clients.length > 0) {
+          this.selectClient(this.clients[0].id);
+        }
       }.bind(this));
 
       try {
