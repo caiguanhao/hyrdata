@@ -145,6 +145,8 @@ class Fetch
   end
 
   def get(&progress)
+    progress = Proc.new {} if not block_given?
+
     ActiveRecord::Base.transaction do
       done = 0
 

@@ -1,4 +1,6 @@
 class ClientsController < ApplicationController
+  skip_before_action :verify_authenticity_token
+
   def index
     respond_to do |format|
       format.html {
@@ -110,5 +112,27 @@ class ClientsController < ApplicationController
       @client.order_groups.delete_all
     end
     render json: 'OK'
+  end
+
+  def fetch
+    username, password = params[:username], params[:password]
+    phpsessid, token, userid = params[:phpsessid], params[:token], params[:userid]
+    Thread.new do
+      begin
+        f = Fetch.new({
+          cellphone: username,
+          password:  password,
+          PHPSESSID: phpsessid,
+          TOKEN:     token,
+          USERID:    userid,
+        })
+        f.get
+      rescue Exception => e
+        puts f.current_url
+        puts e.inspect
+        puts e.backtrace
+      end
+    end
+    render json: { message: 'fetch started' }
   end
 end
