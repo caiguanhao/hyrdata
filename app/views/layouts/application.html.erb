@@ -1,14 +1,33 @@
 <!DOCTYPE html>
 <html>
-  <head>
-    <title>Hyrdata</title>
-    <%= csrf_meta_tags %>
+<head>
+<meta charset="UTF-8">
+<title>HYR-DATA</title>
+<%= csrf_meta_tags %>
+<%= action_cable_meta_tag %>
+<link href="//cdn.bootcss.com/bootstrap/3.3.7/css/bootstrap.min.css" rel="stylesheet">
+<link href="//cdn.bootcss.com/bootstrap/3.3.7/css/bootstrap-theme.min.css" rel="stylesheet">
+<%= stylesheet_link_tag 'application', media: 'all', 'data-turbolinks-track': 'reload' %>
+<script src="//cdn.bootcss.com/lodash.js/4.15.0/lodash.min.js"></script>
+<script src="//cdn.bootcss.com/vue/2.0.3/vue.min.js"></script>
+<script src="//cdn.bootcss.com/vue-resource/1.0.3/vue-resource.min.js"></script>
+<%= javascript_include_tag 'application', 'data-turbolinks-track': 'reload' %>
+</head>
 
-    <%= stylesheet_link_tag    'application', media: 'all', 'data-turbolinks-track': 'reload' %>
-    <%= javascript_include_tag 'application', 'data-turbolinks-track': 'reload' %>
-  </head>
-
-  <body>
+<body>
+  <nav class="navbar navbar-default" role="navigation">
+    <div class="container">
+      <div class="navbar-header">
+        <%= link_to 'HYR-DATA', '/', class: 'navbar-brand' %>
+      </div>
+      <ul class="nav navbar-nav">
+      </ul>
+    </div>
+  </nav>
+  <div class="container">
     <%= yield %>
-  </body>
+  </div>
+  <div class="footer">&copy; 2016 CGH. All rights reserved.</div>
+</body>
+
 </html>

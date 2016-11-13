@@ -1,0 +1,379 @@
+<div id="hyrdata">
+  <div class="row">
+    <div class="col-sm-2">
+      <div class="list-group" v-for="(clients, broker) in groupedClients">
+        <span v-text="broker"></span>
+        <a href class="list-group-item" v-for="client in clients" v-text="client.cellphone"
+          v-bind:class="{active: client.active}" v-on:click.prevent="selectClient(client.id)"></a>
+      </div>
+      <button class="btn btn-default btn-sm" v-on:click="callLogin(true)">登录</button>
+    </div>
+    <div class="col-sm-10" v-if="client">
+      <ul class="nav nav-tabs">
+        <li v-for="(tab, index) in tabs" v-bind:class="{active: opts.activeTabIndex === index}">
+          <a href v-on:click.prevent="selectTab(index)" v-text="tab.text"></a>
+        </li>
+        <li class="pull-right">
+          <div class="form-control-static">
+            更新时间：<span v-text="new Date(client.updated_at).toLocaleString()"></span>
+            <span class="btn-group btn-group-xs">
+              <button class="btn btn-default" v-on:click="callLogin(true, client.cellphone)">重新获取</button>
+              <button class="btn btn-default" v-on:click="confirm('即将清空当前账户已获取信息。') && truncate(client.id)">清空数据</button>
+            </span>
+          </div>
+        </li>
+      </ul>
+      <div class="tab-content">
+        <div class="tab-pane" v-bind:class="{active: opts.activeTabIndex === 0}">
+          <div class="checkbox">
+            <label>
+              <input type="checkbox" v-model="opts.showSummary"> 显示订单组信息
+            </label>
+            <label>
+              <input type="checkbox" v-model="opts.showSubSummary"> 显示各订单详细信息
+            </label>
+            <label>
+              <input type="checkbox" v-model="opts.showBorrowers"> 显示借款人
+            </label>
+          </div>
+          <table class="table">
+            <tbody v-for="orderGroup in client.orderGroups">
+              <tr v-for="(order, index) in orderGroup.orders">
+                <td v-bind:rowspan="orderGroup.orders.length" v-if="index === 0" width="60">
+                  <a v-bind:href="orderGroup.info.agreement" target="_blank" v-text="orderGroup.kind"></a>
+                </td>
+                <td v-show="opts.showSummary || opts.showSubSummary || opts.showBorrowers">
+                  <table class="compact-table" width="100%" v-show="opts.showSummary">
+                    <tbody>
+                      <tr>
+                        <td v-bind:width="colWidth['出借时间'] ? colWidth['出借时间']+'%' : null">出借时间</td>
+                        <td v-for="(value, key) in order.info.basic" v-text="fixKey(key)" v-bind:width="colWidth[key] ? colWidth[key]+'%' : null"></td>
+                      </tr>
+                      <tr>
+                        <td v-text="orderGroup.info.basic['出借时间']"></td>
+                        <td v-for="(value, key) in order.info.basic" v-text="value"></td>
+                      </tr>
+                    </tbody>
+                  </table>
+                  <table class="compact-table" width="100%" v-show="opts.showSubSummary" v-for="extra in order.info.extra">
+                    <caption class="text-center" v-text="extra.name"></caption>
+                    <tbody>
+                      <tr>
+                        <td v-for="(value, key) in extra.info" v-text="fixKey(key)" v-bind:width="colWidth[key] ? colWidth[key]+'%' : null"></td>
+                      </tr>
+                      <tr>
+                        <td v-for="(value, key) in extra.info" v-text="value"></td>
+                      </tr>
+                    </tbody>
+                  </table>
+                  <table class="compact-table" width="100%" v-show="opts.showBorrowers">
+                    <tbody>
+                      <tr v-for="contract in order.contracts" class="contracts">
+                        <td width="60" v-text="contract.borrower.name"></td>
+                        <td width="120" v-text="contract.borrower.identity"></td>
+                        <td width="60" v-text="contract.borrower.info['职业情况']"></td>
+                        <td width="150" v-text="contract.info.basic['借款用途']"></td>
+                        <td width="80" v-text="contract.info.basic['还款期限']"></td>
+                        <td width="100" v-text="contract.info.basic['剩余还款月数']"></td>
+                        <td width="100" v-text="contract.info.basic['本期账单日(或受让)债权价值']"></td>
+                        <td width="100" v-text="contract.info.basic['本期还款金额']"></td>
+                        <td width="60">
+                          <small><a v-bind:href="contract.info.loan_agreement" target="_blank"
+                              v-bind:class="{disabled: !contract.info.loan_agreement}">借款协议</a></small>
+                        </td>
+                        <td width="60">
+                          <small><a v-bind:href="contract.info.loan_transfer_agreement" target="_blank"
+                            v-bind:class="{disabled: !contract.info.loan_transfer_agreement}">转让协议</a></small>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="tab-pane" v-bind:class="{active: opts.activeTabIndex === 1}">
+          <div class="row">
+            <div class="col-sm-6">
+              <table class="table">
+                <tbody>
+                  <tr v-for="(value, key) in client.info">
+                    <td v-text="key"></td>
+                    <td v-text="value"></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="col-sm-6">
+              <table class="table">
+                <tbody>
+                  <tr>
+                    <td>财富顾问</td>
+                    <td v-text="client.broker.name"></td>
+                  </tr>
+                  <tr v-for="(value, key) in client.broker.info">
+                    <td v-text="key"></td>
+                    <td v-text="value"></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="loginModal">
+    <div class="modal fade" tabindex="-1" v-on:click.self="callLogin(false)">
+      <div class="modal-dialog">
+        <div class="modal-content" v-if="typeof(loginProgress) === 'number' && loginProgress >=0">
+          <div class="modal-body">
+            <div class="progress">
+              <div class="progress-bar progress-bar-success" v-bind:style="'width: ' + loginProgress + '%'" v-text="loginProgress + '%'"></div>
+            </div>
+            <p class="text-center"><small v-text="loginStatus"></small></p>
+          </div>
+        </div>
+        <div class="modal-content" v-else>
+          <div class="modal-header">
+            <button type="button" class="close" v-on:click="callLogin(false)"><span aria-hidden="true">&times;</span></button>
+            <h4 class="modal-title">登录</h4>
+          </div>
+          <div class="modal-body">
+            <form class="form-horizontal" v-on:submit.prevent="login()">
+              <div class="form-group">
+                <label for="username" class="col-sm-2 control-label">手机</label>
+                <div class="col-sm-10">
+                  <input type="text" class="form-control" id="username" placeholder="手机" v-model="username" maxlength="11">
+                </div>
+              </div>
+              <div class="form-group">
+                <label for="password" class="col-sm-2 control-label">密码</label>
+                <div class="col-sm-10">
+                  <input type="text" class="form-control" id="password" placeholder="密码" v-model="password" maxlength="12">
+                  <span class="help-block">如要使用已有账号原密码登录，请留空。</span>
+                </div>
+              </div>
+              <div class="form-group">
+                <label for="captcha" class="col-sm-2 control-label">验证码</label>
+                <div class="col-sm-10">
+                  <input type="text" class="form-control" id="captcha" placeholder="验证码" v-model="captcha" maxlength="4">
+                  <a href v-on:click.prevent="newSession()" class="image" tabindex="-1" title="点击图片更换验证码" v-if="image">
+                    <img v-bind:src="'data:image/png;base64,'+image">
+                  </a>
+                </div>
+              </div>
+              <div class="form-group">
+                <div class="col-sm-offset-2 col-sm-10">
+                  <div class="btn-group">
+                    <button type="submit" v-bind:disabled="!username || !captcha || !image" class="btn btn-default">登录</button>
+                  </div>
+                </div>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="modal-backdrop fade hidden"></div>
+</div>
+
+<script>
+  Vue.http.headers.common['X-CSRF-Token'] = document.querySelector('meta[name=csrf-token]').getAttribute('content');
+
+  var hyrdata = new Vue({
+    el: '#hyrdata',
+    computed: {
+      groupedClients: function () {
+        return _.groupBy(this.clients, 'broker.name');
+      },
+      client: function () {
+        return _.find(this.clients, { active: true });
+      }
+    },
+    data: {
+      clients: [],
+      username: null,
+      password: null,
+      captcha: null,
+      session: null,
+      image: null,
+      loginProgress: null,
+      loginStatus: null,
+      opts: {
+        activeTabIndex: 0,
+        showSummary: true,
+        showSubSummary: true,
+        showBorrowers: false
+      },
+      colWidth: {
+        "出借时间": 10,
+        "状态": 6,
+        "账单日": 6,
+        "出借方式": 8,
+        "出借期限": 8,
+        "出借金额": 10,
+        "剩余期限": 10,
+        "匹配时间": 10,
+        "匹配金额": 10,
+        "匹配借款数": 9,
+        "起息时间": 10,
+        "复投金额": 10,
+        "实际收益": 10,
+        "资产总额": 10,
+        "账户管理费": 7,
+        "账户管理费率": 8,
+        "预计回收利息": 10,
+        "借款人应还款金额": 10,
+        "本账单日预期收益": 13,
+        "延迟支付应折扣减金额": 10,
+      },
+      tabs: [
+        {
+          text: '订单',
+          active: true
+        }, {
+          text: '个人信息',
+          active: false
+        }
+      ]
+    },
+    watch: {
+      opts: {
+        deep: true,
+        handler: function () {
+          localStorage.setItem('hyrdata.opts', JSON.stringify(this.opts));
+        }
+      }
+    },
+    methods: {
+      fixKey: function (key) {
+        return {
+          '平台建议的年均出借回报率约': '回报率',
+          '借款人实际还款金额/风险金代偿金额': '实际还款金额',
+          '账户管理费': '管理费',
+          '账户管理费率': '管理费率',
+          '借款人应还款金额': '借款人应还',
+          '延迟支付应折扣减金额': '延迟支付应扣'
+        }[key] || key;
+      },
+      newSession: function () {
+        this.$http.get('/clients/new').then(function (res) {
+          this.image = res.body.image;
+          this.session = res.body.session;
+          this.captcha = null;
+        }.bind(this));
+        var focus = this.username ? 'captcha' : 'username';
+        window.setTimeout(function () {
+          document.getElementById(focus).focus();
+        });
+      },
+      callLogin: function (toShow, withUserName) {
+        var login = document.getElementById('loginModal');
+        var modal = login.querySelector('.modal');
+        var backdrop = document.querySelector('.modal-backdrop');
+        if (toShow) {
+          this.username = withUserName || null;
+          login.className += ' modal-open';
+          modal.className += ' show in';
+          backdrop.className = backdrop.className.replace(/\s*hidden\s*/g, '') + ' in';
+          this.newSession();
+        } else {
+          login.className = login.className.replace(/\s*modal-open\s*/g, '');
+          modal.className = modal.className.replace(/\s*(show|in)\s*/g, '');
+          backdrop.className = backdrop.className.replace(/\s*in\s*/g, '') + ' hidden';
+        }
+      },
+      login: function () {
+        this.$http.post('/clients', {
+          username: this.username,
+          password: this.password,
+          captcha: this.captcha,
+          session: this.session
+        }).then(function () {
+          this.username = null;
+          this.password = null;
+          this.captcha = null;
+          this.session = null;
+          this.image = null;
+        }.bind(this), function (err) {
+        });
+      },
+      selectTab: function (index) {
+        this.opts.activeTabIndex = index;
+      },
+      selectClient: function (id) {
+        _.each(this.clients, function (client) {
+          if (client.id === id) {
+            client.active = true;
+            this.getClient(id);
+          } else {
+            client.active = false;
+          }
+        }.bind(this));
+      },
+      getClients: function () {
+        return this.$http.get('/clients').then(function (res) {
+          var activeClient = _.find(this.clients, { active: true });
+          var clients = res.body;
+          _.each(clients, function (client) {
+            client.active = activeClient && client.id === activeClient.id;
+            client.orderGroups = [];
+          });
+          this.clients = clients;
+
+          activeClient = _.find(this.clients, { active: true });
+          if (activeClient) {
+            this.getClient(activeClient.id);
+          }
+        }.bind(this));
+      },
+      getClient: function (id) {
+        var client = _.find(this.clients, { id: id });
+        return this.$http.get('/clients/' + id).then(function (res) {
+          client.orderGroups = res.body.order_groups;
+        }.bind(this));
+      },
+      truncate: function (id) {
+        return this.$http.delete('/clients/' + id).then(function () {
+          return this.getClient(id);
+        }.bind(this));
+      }
+    },
+    created: function () {
+      this.getClients().then(function () {
+        this.selectClient(this.clients[0].id);
+      }.bind(this));
+
+      try {
+        var opts = JSON.parse(localStorage.getItem('hyrdata.opts'));
+        _.each(this.opts, function (_, key) {
+          this.opts[key] = opts[key];
+        }.bind(this));
+      } catch (e) {}
+
+      App.cable.subscriptions.create('ClientsChannel', {
+        received: function (data) {
+          this.loginProgress = data.progress;
+          this.loginStatus = data.status;
+          if (data.is_last && this.loginProgress === 100) {
+            var ok = this.loginStatus.indexOf('已完成') > -1;
+            if (ok) {
+              this.getClients();
+            }
+            setTimeout(function () {
+              this.loginProgress = null;
+              this.loginStatus = null;
+              if (ok) {
+                this.callLogin(false);
+              }
+            }.bind(this), 2000);
+          }
+        }.bind(this)
+      });
+    }
+  });
+</script>
