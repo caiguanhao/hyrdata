@@ -37,7 +37,19 @@
             <label>
               <input type="checkbox" v-model="opts.showBorrowers"> 显示借款人
             </label>
+            <div class="pull-right">
+              <span class="btn-group btn-group-xs" v-if="client.downloadProgress < 0">
+                <a v-bind:href="client.info.download" v-bind:download="clientDownloadFilename" v-if="client.info.download" class="btn btn-default">下载所有文件</a>
+                <a href v-else v-on:click.prevent="download(client.id)" class="btn btn-default">生成下载器</a>
+              </span>
+              <div v-else>
+              </div>
+            </div>
           </div>
+          <div class="progress" style="width: 500px; margin: auto;" v-if="client.downloadProgress > -1">
+            <div class="progress-bar progress-bar-success" v-bind:style="'width: ' + client.downloadProgress + '%'" v-text="client.downloadProgress + '%'"></div>
+          </div>
+          <p class="text-center"><small v-text="client.downloadStatus"></small></p>
           <table class="table">
             <tbody v-for="orderGroup in client.orderGroups">
               <tr v-for="(order, index) in orderGroup.orders">
@@ -100,7 +112,7 @@
             <div class="col-sm-6">
               <table class="table">
                 <tbody>
-                  <tr v-for="(value, key) in client.info">
+                  <tr v-for="(value, key) in client.info.basic">
                     <td v-text="key"></td>
                     <td v-text="value"></td>
                   </tr>
@@ -194,6 +206,10 @@
       },
       client: function () {
         return _.find(this.clients, { active: true });
+      },
+      clientDownloadFilename: function () {
+        if (!this.client) return '';
+        return this.client.cellphone + '(' + this.client.info.basic['真实姓名'] + ').exe';
       }
     },
     data: {
@@ -323,6 +339,8 @@
           var clients = res.body;
           _.each(clients, function (client) {
             client.active = activeClient && client.id === activeClient.id;
+            client.downloadStatus = null;
+            client.downloadProgress = -1;
             client.orderGroups = [];
           });
           this.clients = clients;
@@ -336,8 +354,17 @@
       getClient: function (id) {
         var client = _.find(this.clients, { id: id });
         return this.$http.get('/clients/' + id).then(function (res) {
+          client.info = res.body.info;
           client.orderGroups = res.body.order_groups;
         }.bind(this));
+      },
+      download: function (id) {
+        return this.$http.post('/clients/' + id + '/downloads').then(function (res) {
+          if (res.body.exists) {
+            var client = _.find(this.clients, { id: id });
+            client.info.download = res.body.url;
+          }
+        });
       },
       truncate: function (id) {
         return this.$http.delete('/clients/' + id).then(function () {
@@ -361,20 +388,36 @@
 
       App.cable.subscriptions.create('ClientsChannel', {
         received: function (data) {
-          this.loginProgress = data.progress;
-          this.loginStatus = data.status;
-          if (data.is_last && this.loginProgress === 100) {
-            var ok = this.loginStatus.indexOf('已完成') > -1;
+          switch (data.type) {
+          case 'download':
+            var client = _.find(this.clients, { id: data.client_id });
+            client.downloadStatus = data.status;
+            client.downloadProgress = data.progress;
+            var ok = data.status && data.status.indexOf('Done') > -1;
             if (ok) {
-              this.getClients();
+              setTimeout(function () {
+                this.getClient(data.client_id);
+                client.downloadStatus = null;
+                client.downloadProgress = -1;
+              }.bind(this), 2000);
             }
-            setTimeout(function () {
-              this.loginProgress = null;
-              this.loginStatus = null;
+            break;
+          default:
+            this.loginProgress = data.progress;
+            this.loginStatus = data.status;
+            if (data.is_last && this.loginProgress === 100) {
+              var ok = this.loginStatus.indexOf('已完成') > -1;
               if (ok) {
-                this.callLogin(false);
+                this.getClients();
               }
-            }.bind(this), 2000);
+              setTimeout(function () {
+                this.loginProgress = null;
+                this.loginStatus = null;
+                if (ok) {
+                  this.callLogin(false);
+                }
+              }.bind(this), 2000);
+            }
           }
         }.bind(this)
       });

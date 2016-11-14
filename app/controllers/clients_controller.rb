@@ -110,6 +110,12 @@ class ClientsController < ApplicationController
       @client.contracts.delete_all
       @client.orders.delete_all
       @client.order_groups.delete_all
+      if @client.info['download']
+        f = Rails.root.join('public').to_s + @client.info['download']
+        File.unlink(f) if File.file?(f)
+      end
+      @client.info['download'] = nil
+      @client.save
     end
     render json: 'OK'
   end
@@ -134,5 +140,63 @@ class ClientsController < ApplicationController
       end
     end
     render json: { message: 'fetch started' }
+  end
+
+  def downloads
+    client = Client.find(params[:id])
+    files_go = client.files_go
+    shasum = Digest::SHA1.hexdigest(files_go)
+    path = Rails.root.join('public', 'downloads', "#{shasum}.exe")
+    download = path.to_s[Rails.root.join('public').to_s.size..-1]
+    exists = File.file?(path)
+
+    @progress = 0
+    progress = Proc.new do |status, increment = 1, final = false|
+      ActionCable.server.broadcast 'messages', {
+        type: 'download',
+        client_id: client.id,
+        progress: (@final ||= final) ? 100 : [ @progress += increment, 99 ].min.round(1),
+        status: status.present? ? (@status = status) : @status
+      }
+    end
+
+    if not exists
+      Thread.new do
+        fake = Thread.new do
+          loop do
+            progress.call(nil, 0.1)
+            sleep 0.2
+          end
+        end
+        container = Docker::Container.create('Cmd' => ['/dlfiles.exe'], 'Image' => 'dlfiles')
+        begin
+          container.store_file("#{container.json.dig('Config', 'WorkingDir')}/files.go", files_go)
+          container.start
+          container.streaming_logs(stdout: true, stderr: true, follow: true) { |_, status|
+            progress.call(status.strip)
+          }
+          container.wait
+          data = ''
+          container.copy('/dlfiles.exe') do |chunk|
+            data << chunk
+          end
+          Gem::Package::TarReader.new(StringIO.new(data)).seek('dlfiles.exe') do |entry|
+            File.binwrite(path, entry.read)
+          end
+          client.info['download'] = download
+          client.save
+          progress.call('Done', 1, true)
+        rescue Exception => e
+          progress.call(e.inspect, 1, true)
+        ensure
+          container.delete(force: true)
+          fake.kill
+        end
+      end
+    end
+    render json: {
+      url: download,
+      exists: exists,
+    }
   end
 end

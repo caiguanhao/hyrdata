@@ -59,9 +59,13 @@ GEM
       puma (>= 2.6)
     concurrent-ruby (1.0.2)
     debug_inspector (0.0.2)
+    docker-api (1.32.1)
+      excon (>= 0.38.0)
+      json
     domain_name (0.5.20161021)
       unf (>= 0.0.5, < 1.0.0)
     erubis (2.7.0)
+    excon (0.54.0)
     execjs (2.7.0)
     ffi (1.9.14)
     globalid (0.3.7)
@@ -69,6 +73,7 @@ GEM
     http-cookie (1.0.3)
       domain_name (~> 0.5)
     i18n (0.7.0)
+    json (2.0.2)
     listen (3.0.8)
       rb-fsevent (~> 0.9, >= 0.9.4)
       rb-inotify (~> 0.9, >= 0.9.7)
@@ -175,6 +180,7 @@ DEPENDENCIES
   capistrano-rails
   capistrano-rbenv
   capistrano3-puma
+  docker-api
   listen (~> 3.0.5)
   nokogiri
   pg (~> 0.18)

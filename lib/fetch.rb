@@ -20,14 +20,14 @@ class Fetch
 
   def get_client(broker)
     doc = get_doc('/accountmge.html')
-    info = doc.css('.dlm_jbxx tr').map do |row|
+    basic = doc.css('.dlm_jbxx tr').map do |row|
       key, value = row.css('td')
       next nil if value.nil?
       [ key.text.sub('：', ''), value.text ]
     end.compact.to_h
-    info.except!('头像')
-    return nil if info.empty?
-    broker.clients.create_with(password: @data.fetch(:password), info: info).find_or_create_by!(cellphone: @data.fetch(:cellphone))
+    basic.except!('头像')
+    return nil if basic.empty?
+    broker.clients.create_with(password: @data.fetch(:password), info: { basic: basic }).find_or_create_by!(cellphone: @data.fetch(:cellphone))
   end
 
   def get_order_group(client, order_group)
@@ -192,6 +192,8 @@ class Fetch
         end
       end
 
+      client.info['download'] = nil
+      client.save
       client.touch
 
       true

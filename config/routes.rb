@@ -7,5 +7,8 @@ Rails.application.routes.draw do
     collection do
       post :fetch
     end
+    member do
+      post :downloads
+    end
   end
 end
