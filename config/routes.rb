@@ -11,4 +11,15 @@ Rails.application.routes.draw do
       post :downloads
     end
   end
+
+  resources :brokers do
+    member do
+      post 'toggle-status'
+    end
+  end
+
+  scope controller: :check do
+    post 'version'
+    post 'broker'
+  end
 end

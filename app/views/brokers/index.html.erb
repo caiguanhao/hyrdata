@@ -1,0 +1,28 @@
+<%= link_to 'NEW', new_broker_path, class: 'btn btn-default' %>
+<table class="table">
+  <thead>
+    <tr>
+      <th>ID</th>
+      <th>NAME</th>
+      <th>STATUS</th>
+      <th>ACTIONS</th>
+    </tr>
+  </thead>
+  <tbody>
+    <% @brokers.each do |broker| %>
+      <tr>
+        <td><%= broker.id %></td>
+        <td><%= broker.name %></td>
+        <td>
+          <%= text, klass = broker.status_html; content_tag :span, text, class: klass %>
+          <%= form_tag toggle_status_broker_path(broker), style: 'display: inline-block;' do |f| %>
+            <%= submit_tag 'TOGGLE', class: 'btn btn-default btn-xs' %>
+          <% end %>
+        </td>
+        <td>
+          <%= link_to 'EDIT', edit_broker_path(broker) %>
+        </td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>

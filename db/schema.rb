@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20161106092622) do
+ActiveRecord::Schema.define(version: 20161120181820) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -24,7 +24,8 @@ ActiveRecord::Schema.define(version: 20161106092622) do
 
   create_table "brokers", force: :cascade do |t|
     t.string "name"
-    t.jsonb  "info", default: {}, null: false
+    t.jsonb  "info",   default: {}, null: false
+    t.string "status"
     t.index ["name"], name: "index_brokers_on_name", unique: true, using: :btree
   end
 
