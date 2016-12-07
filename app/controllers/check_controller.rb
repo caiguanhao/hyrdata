@@ -25,7 +25,9 @@ class CheckController < ApplicationController
     broker = params[:broker].map { |b| [ b[:key], b[:value] ] }.to_h
     a = Account.select(:id, :quota).find_by('restrictions <@ ?', broker.to_json).try(:as_json) || {}
     free = '10:00:20'
-    ok = a.fetch('quota', -1) >= d || Time.now.localtime > Time.parse(free)
+    free_end = '10:10:00'
+    is_free = Time.now.localtime >= Time.parse(free) && Time.now.localtime <= Time.parse(free_end)
+    ok = a.fetch('quota', -1) >= d || is_free
     if ok
       msg = nil
     else

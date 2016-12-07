@@ -36,7 +36,14 @@ class AccountsController < ApplicationController
     }.fetch(params[:id], 1) * params[:amount].to_i
     broker = params[:broker].map { |b| [ b[:key], b[:value] ] }.to_h
     account = Account.find_by!('restrictions <@ ?', broker.to_json)
-    account.decrement!(:quota, d)
+    free = '10:00:20'
+    free_end = '10:10:00'
+    is_free = Time.now.localtime >= Time.parse(free) && Time.now.localtime <= Time.parse(free_end)
+    if is_free
+      d = 0
+    else
+      account.decrement!(:quota, d)
+    end
     render json: { ok: true, decrement: d }
   end
 
