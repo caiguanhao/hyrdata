@@ -1,0 +1,9 @@
+<%= bootstrap_form_for account, layout: :horizontal do |f| %>
+  <% Account::RESTRICTIONS.each do |key, text| %>
+    <%= f.text_field key, label: text %>
+  <% end %>
+  <%= f.number_field :quota, label: '配额' %>
+  <%= f.form_group do %>
+    <%= f.submit 'Submit' %>
+  <% end %>
+<% end %>

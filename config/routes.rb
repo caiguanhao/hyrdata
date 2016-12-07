@@ -12,6 +12,12 @@ Rails.application.routes.draw do
     end
   end
 
+  resources :accounts, except: [ :show, :destroy ] do
+    collection do
+      post :done
+    end
+  end
+
   resources :brokers do
     member do
       post 'toggle-status'
@@ -21,5 +27,6 @@ Rails.application.routes.draw do
   scope controller: :check do
     post 'version'
     post 'broker'
+    post 'account'
   end
 end

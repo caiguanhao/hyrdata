@@ -1,0 +1,23 @@
+<%= link_to 'NEW', new_account_path, class: 'btn btn-default' %>
+<table class="table">
+  <thead>
+    <tr>
+      <th>ID</th>
+      <th>RESTRICTIONS</th>
+      <th>QUOTA</th>
+      <th>ACTIONS</th>
+    </tr>
+  </thead>
+  <tbody>
+    <% @accounts.each do |account| %>
+      <tr>
+        <td><%= account.id %></td>
+        <td><%= account.restrictions %></td>
+        <td><%= account.quota %></td>
+        <td>
+          <%= link_to 'EDIT', edit_account_path(account) %>
+        </td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>

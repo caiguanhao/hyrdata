@@ -11,9 +11,8 @@ class BrokersController < ApplicationController
 
   def create
     @broker = Broker.new(broker_params)
-    if @broker.save
-      redirect_to brokers_path and return
-    end
+    @broker.save
+    redirect_to brokers_path
   end
 
   def edit
@@ -21,9 +20,8 @@ class BrokersController < ApplicationController
 
   def update
     @broker.assign_attributes(broker_params)
-    if @broker.save
-      redirect_to brokers_path and return
-    end
+    @broker.save
+    redirect_to brokers_path
   end
 
   def toggle_status
