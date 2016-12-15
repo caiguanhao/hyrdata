@@ -36,6 +36,7 @@ group :development do
   gem 'capistrano3-puma'
 end
 
+gem 'http'
 gem 'rest-client'
 gem 'nokogiri'
 gem 'docker-api'

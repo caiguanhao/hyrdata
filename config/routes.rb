@@ -1,5 +1,6 @@
 Rails.application.routes.draw do
-  root to: redirect('/clients')
+  root to: 'pages#home'
+  get 'sytlist', to: 'pages#sytlist'
 
   mount ActionCable.server => '/cable'
 

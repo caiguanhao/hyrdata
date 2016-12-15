@@ -1,0 +1,260 @@
+<div id="hyr">
+  <div class="form-group">
+    <button class="btn btn-default" v-on:click="newClient()">增加</button>
+    <button class="btn btn-default" v-on:click="getSYTList()" v-bind:disabled="sytFetching">获取随易投</button>
+    <button class="btn btn-default" v-on:click="perform('login')">登录</button>
+    <button class="btn btn-default" v-on:click="perform('pay')">抢</button>
+  </div>
+  <table class="table table-hover">
+    <thead>
+      <tr>
+        <th width="30"></th>
+        <th width="120">手机</th>
+        <th width="130">密码</th>
+        <th width="130">产品</th>
+        <th width="100">金额</th>
+        <th width="80">姓名</th>
+        <th width="80">UID</th>
+        <th width="100">余额</th>
+        <th width="150">最新抢时间</th>
+        <th>信息</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr v-for="(client, index) in clients">
+        <td>
+          <button type="button" class="btn btn-default btn-xs" v-on:click="clients.splice(index, 1)">
+            <span class="glyphicon glyphicon-remove"></span>
+          </button>
+        </td>
+        <td>
+          <input class="form-control input-sm" v-model="client.cellphone" v-bind:disabled="!client.enabled">
+        </td>
+        <td>
+          <input class="form-control input-sm" v-model="client.password" v-bind:disabled="!client.enabled">
+        </td>
+        <td>
+          <select class="form-control input-sm" v-model="client.type" v-bind:disabled="!client.enabled">
+            <option v-for="type in types" v-text="type.name" v-bind:value="type.name"></option>
+          </select>
+        </td>
+        <td>
+          <input class="form-control input-sm" v-model="client.money" v-bind:disabled="!client.enabled">
+        </td>
+        <td v-text="client.name"></td>
+        <td v-text="client.uid"></td>
+        <td v-text="client.balance"></td>
+        <td v-text="timestamp2date(client.last_order_time)"></td>
+        <td v-text="client.message"></td>
+      </tr>
+    </tbody>
+  </table>
+  <hr>
+  <div class="form-group">
+    <textarea class="form-control" v-model="clientsText" rows="10"></textarea>
+  </div>
+  <div class="form-group">
+    <button class="btn btn-default" v-on:click="text2clients()">批量添加</button>
+  </div>
+</div>
+<script>
+  new Vue({
+    el: '#hyr',
+    watch: {
+      clients: {
+        handler: function () {
+          localStorage.setItem('clients', JSON.stringify(_(this.clients).map(function (s) {
+            return _.pick(s, ['cellphone', 'password', 'money', 'type', 'name', 'balance', 'uid', 'ukey', 'last_order_time']);
+          })));
+        },
+        deep: true
+      }
+    },
+    data: {
+      clients: [],
+      clientsText: null,
+      sytFetching: false,
+      types: [
+        {
+          name :'定利宝3年返还',
+          type: 'dtpay',
+          id: 106,
+          pattern: 2
+        },
+        {
+          name: '定利宝3年复投',
+          type: 'dtpay',
+          id: 106,
+          pattern: 1
+        },
+        {
+          name: '定利宝2年返还',
+          type: 'dtpay',
+          id: 105,
+          pattern: 2
+        },
+        {
+          name: '定利宝2年复投',
+          type: 'dtpay',
+          id: 105,
+          pattern: 1
+        },
+        {
+          name: '定利宝1.5年返还',
+          type: 'dtpay',
+          id: 104,
+          pattern: 2
+        },
+        {
+          name: '定利宝1.5年复投',
+          type: 'dtpay',
+          id: 104,
+          pattern: 1
+        },
+        {
+          name: '定利宝1年返还',
+          type: 'dtpay',
+          id: 103,
+          pattern: 2
+        },
+        {
+          name: '定利宝1年复投',
+          type: 'dtpay',
+          id: 103,
+          pattern: 1
+        },
+        {
+          name: '定利宝0.5年返还',
+          type: 'dtpay',
+          id: 102,
+          pattern: 2
+        },
+        {
+          name: '定利宝0.5年复投',
+          type: 'dtpay',
+          id: 102,
+          pattern: 1
+        },
+        {
+          name: '定利宝0.25年返还',
+          type: 'dtpay',
+          id: 101,
+          pattern: 2
+        },
+        {
+          name: '定利宝0.25年复投',
+          type: 'dtpay',
+          id: 101,
+          pattern: 1
+        }
+      ]
+    },
+    methods: {
+      getSYTList: function () {
+        this.sytFetching = true;
+        this.$http.get('/sytlist').then(function (res) {
+          _.each(res.body, function (item) {
+            this.types.push({ name: item.name, type: 'syt', id: item.id });
+          }.bind(this));
+        }.bind(this)).finally(function () {
+          this.sytFetching = false;
+        }.bind(this));
+      },
+      newClient: function (client) {
+        client = client || {};
+        var newClient = {
+          cellphone: client.cellphone,
+          password:  client.password,
+          money:     client.money || 0,
+          type:      client.type || this.types[0].name,
+          name:      client.name || '-',
+          balance:   client.balance || 0,
+          message:   null,
+          uid:       client.uid || null,
+          ukey:      client.ukey || null,
+          enabled:   true,
+
+          last_order_time: client.last_order_time || null
+        };
+        var index = _.findIndex(this.clients, { cellphone: client.cellphone });
+        if (index > -1) {
+          _.each(newClient, function (value, key) {
+            this.clients[index][key] = value;
+          }.bind(this));
+        } else {
+          this.clients.push(newClient);
+        }
+      },
+      perform: function (action) {
+        _.each(this.clients, function (client) {
+          if (!client.enabled) return;
+          var data = _.pick(client, [ 'cellphone', 'password', 'uid', 'ukey' ]);
+          if (action === 'pay') {
+            data.money = client.money;
+            data.type = _.find(this.types, { name: client.type });
+            this.subs.perform('pay', data);
+          } else if (action === 'login') {
+            this.subs.perform('login', data);
+          }
+        }.bind(this));
+      },
+      text2clients: function () {
+        _.each(this.clientsText.split('\n'), function (line) {
+          var info = line.trim().split(/\s+/);
+          if (info.length > 1) {
+            var other = info[2];
+            var money = null;
+            var product = null;
+            var pattern = 0;
+            for (var i = 2; i < info.length; i++) {
+              if (/^\d{4,}$/.test(info[i])) {
+                money = info[i]
+              }
+              var p = (/[0-9.]+年/.exec(info[i]) || [])[0];
+              if (p) {
+                product = p;
+              }
+              if (info[i].indexOf('复投') > -1) {
+                pattern = 1
+              }
+              if (info[i].indexOf('返还') > -1) {
+                pattern = 2
+              }
+            }
+            var can = [];
+            _.each(this.types, function (type) {
+              if (type.pattern === pattern) {
+                can.push(type.name);
+              }
+            });
+            var type = _.find(can, function (n) {
+              return n.indexOf(product) > -1;
+            });
+            this.newClient({ cellphone: info[0], password: info[1], type: type, money: money });
+          }
+        }.bind(this));
+        this.clientsText = null;
+      },
+      timestamp2date: function (timestamp) {
+        var d = timestamp && new Date(timestamp * 1000 + 8 * 60 * 60 * 1000).toJSON();
+        return d ? d.replace(/T/, ' ').replace(/\..*$/, '') : '-';
+      }
+    },
+    created: function () {
+      try {
+        var clients = JSON.parse(localStorage.getItem('clients'));
+        _.each(clients, this.newClient);
+      } catch(e) {}
+
+      this.subs = App.cable.subscriptions.create('PagesChannel', {
+        received: function (data) {
+          console.log(data);
+          var client = _.find(this.clients, { cellphone: data.cellphone });
+          _.each(data, function (val, key) {
+            client[key] = val;
+          });
+        }.bind(this)
+      });
+    }
+  });
+</script>
