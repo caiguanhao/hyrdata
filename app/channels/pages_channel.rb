@@ -60,7 +60,7 @@ class PagesChannel < ApplicationCable::Channel
   private
 
     def _kill(cellphone)
-      @threads[cellphone].kill
+      @threads[cellphone].kill if @threads && @threads[cellphone]
     end
 
     def _pay(cellphone, data)
