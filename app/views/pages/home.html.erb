@@ -3,7 +3,8 @@
     <button class="btn btn-default" v-on:click="newClient()">增加</button>
     <button class="btn btn-default" v-on:click="getSYTList()" v-bind:disabled="sytFetching">获取随易投</button>
     <button class="btn btn-default" v-on:click="perform('login')">登录/获取信息</button>
-    <button class="btn btn-default" v-on:click="perform('pay')">抢</button>
+    <button class="btn btn-default" v-on:click="perform('pay')" v-bind:disabled="!enabled">开始抢</button>
+    <button class="btn btn-default" v-on:click="perform('stop')" v-bind:disabled="enabled">停止抢</button>
   </div>
   <table class="table table-hover">
     <thead>
@@ -72,6 +73,7 @@
     },
     data: {
       clients: [],
+      enabled: true,
       clientsText: null,
       sytFetching: false,
       types: [
@@ -186,6 +188,10 @@
         }
       },
       perform: function (action) {
+        if (action === 'stop') {
+          this.subs.perform('stop');
+          return;
+        }
         _.each(this.clients, function (client) {
           if (!client.enabled) return;
           var data = _.pick(client, [ 'cellphone', 'password', 'uid', 'ukey' ]);
@@ -210,6 +216,10 @@
               if (/^\d{4,}$/.test(info[i])) {
                 money = info[i]
               }
+              var m = /(\d+)万/.exec(info[i]);
+              if (m && m[1]) {
+                money = +m[1] * 10000;
+              }
               var p = (/[0-9.]+年/.exec(info[i]) || [])[0];
               if (p) {
                 product = p;
@@ -230,7 +240,9 @@
             var type = _.find(can, function (n) {
               return n.indexOf(product) > -1;
             });
-            this.newClient({ cellphone: info[0], password: info[1], type: type, money: money });
+            var password = info[1];
+            if (password) password = /[\w]+/.exec(password)[0];
+            this.newClient({ cellphone: info[0], password: password, type: type, money: money });
           }
         }.bind(this));
         this.clientsText = null;
@@ -249,6 +261,13 @@
       this.subs = App.cable.subscriptions.create('PagesChannel', {
         received: function (data) {
           console.log(data);
+          if (data.action === 'global') {
+            this.enabled = data.enabled;
+            _.each(this.clients, function (client) {
+              client.enabled = this.enabled;
+            }.bind(this));
+            return;
+          }
           var client = _.find(this.clients, { cellphone: data.cellphone });
           _.each(data, function (val, key) {
             client[key] = val;

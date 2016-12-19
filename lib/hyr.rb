@@ -30,7 +30,7 @@ class HYR
   end
 
   def request(path, form, ukey = '(null)')
-    response = HTTP.timeout(write: 2, connect: 5, read: 10).headers(
+    response = HTTP.timeout(write: 2, connect: 3, read: 4).headers(
       'User-Agent' => 'HengYiRong3.0/3.0.2 CFNetwork/808.1.4 Darwin/16.1.0',
     ).post(path, form: {
       'Token'     => encrypt("hengyirong-#{Time.now.to_i}-0", key = TOKEN_KEY),
