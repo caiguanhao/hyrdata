@@ -34,7 +34,7 @@ class PagesChannel < ApplicationCable::Channel
   def login(data)
     begin
       cellphone = data.fetch('cellphone')
-      hyr = HYR.new(cellphone, data.fetch('password'), data.fetch('uid'), data.fetch('ukey'))
+      hyr = HYR.new(cellphone, data.fetch('password'), data.fetch('uid'), data.fetch('ukey') || '(null)')
 
       broadcast(cellphone, message: '获取信息中...')
       resp, success = hyr.get_orders
